@@ -13,7 +13,11 @@ export default function LoginSuccess() {
         {user ? (
           <>
             <p className="text-gray-700 text-lg mb-2">
-              Hello, <span className="font-semibold">{user.email}</span>!
+              Hello,{" "}
+              <span className="font-semibold">
+                {user.fullName || user.email}
+              </span>
+              !
             </p>
             <p className="text-gray-500 text-sm mb-4">{user.email}</p>
           </>

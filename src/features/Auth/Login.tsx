@@ -11,17 +11,26 @@ export default function Login() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const res = await loginUser({ email, password });
-      // backend must return { token, user }
-      dispatch(setCredentials({ token: res.data.token, user: res.data.user }));
-      navigate("/login-success");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed");
-    }
-  };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const res = await loginUser({ email, password });
+
+    // normalize user including role
+    const normalizedUser = {
+      fullName: res.data.fullName || res.data.username || "",
+      email: res.data.email || email,
+      role: res.data.role || "User", // fallback to "User"
+    };
+
+    dispatch(setCredentials({ token: res.data.token, user: normalizedUser }));
+
+    navigate("/home");
+  } catch (err: any) {
+    setError(err.response?.data?.message || "Login failed");
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
