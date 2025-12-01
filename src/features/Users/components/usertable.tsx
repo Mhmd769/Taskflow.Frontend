@@ -3,18 +3,30 @@ import { deleteUser } from "../usersSlice";
 import { useAppDispatch } from "../../../store/store";
 import { Trash2, Edit, Mail, Shield, User } from "lucide-react";
 import { useState } from "react";
+import { confirmDelete, successAlert, errorAlert } from "../../../utils/alerts";
 
-interface Props {
+
+
+interface UserTableProps {
   users: any[];
+  onEdit: (user: any) => void;
 }
 
-export default function UserTable({ users }: Props) {
+export default function UserTable({ users, onEdit }: UserTableProps) {
   const dispatch = useAppDispatch();
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete ${name}?`)) {
-      dispatch(deleteUser(id));
+  const handleDelete = async (id: string, name: string) => {
+      const result = await confirmDelete();
+
+      if (result.isConfirmed) {
+        const res = await dispatch(deleteUser(id));
+        if(deleteUser.fulfilled.match(res)) {
+          successAlert(`User "${name}" has been deleted.`);
+        }
+        else {
+          errorAlert(`Failed to delete user "${name}". Please try again.`);
+      }
     }
   };
 
@@ -130,6 +142,7 @@ export default function UserTable({ users }: Props) {
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-2">
                     <button
+                      onClick={() => onEdit(user)}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
                       title="Edit user"
                     >

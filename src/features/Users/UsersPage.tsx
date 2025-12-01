@@ -1,20 +1,35 @@
-// UsersPage.tsx
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { fetchUsers } from "./usersSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import UserTable from "./components/usertable";
+import UserForm from "./components/userform";
 import { UserPlus, Download, Filter, User, Shield, Loader2 } from "lucide-react";
 
 export default function UsersPage() {
   const dispatch = useAppDispatch();
   const { list: users, loading } = useAppSelector((state) => state.users);
 
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+
   useEffect(() => {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  const adminCount = users.filter(u => 
-    u.role?.toLowerCase() === "administrator" || u.role?.toLowerCase() === "admin"
+  const openCreateForm = () => {
+    setSelectedUser(null);
+    setIsFormOpen(true);
+  };
+
+  const openEditForm = (user: any) => {
+    setSelectedUser(user);
+    setIsFormOpen(true);
+  };
+
+  const adminCount = users.filter(
+    (u) =>
+      u.role?.toLowerCase() === "administrator" ||
+      u.role?.toLowerCase() === "admin"
   ).length;
 
   const activeCount = Math.floor(users.length * 0.6);
@@ -22,6 +37,7 @@ export default function UsersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
@@ -31,7 +47,12 @@ export default function UsersPage() {
                 Manage your team members and their permissions
               </p>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 font-medium shadow-lg shadow-blue-600/30 hover:shadow-xl hover:scale-105">
+
+            {/* OPEN CREATE FORM */}
+            <button
+              onClick={openCreateForm}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 font-medium shadow-lg shadow-blue-600/30 hover:shadow-xl hover:scale-105"
+            >
               <UserPlus className="w-4 h-4" />
               Add User
             </button>
@@ -44,7 +65,9 @@ export default function UsersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{users.length}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">
+                  {users.length}
+                </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                 <User className="w-6 h-6 text-blue-600" />
@@ -57,7 +80,9 @@ export default function UsersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Administrators</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{adminCount}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">
+                  {adminCount}
+                </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                 <Shield className="w-6 h-6 text-purple-600" />
@@ -70,7 +95,9 @@ export default function UsersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Now</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{activeCount}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">
+                  {activeCount}
+                </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
@@ -80,7 +107,7 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* Filters and Actions Bar */}
+        {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
@@ -109,7 +136,7 @@ export default function UsersPage() {
             <p className="text-gray-600">Loading users...</p>
           </div>
         ) : (
-          <UserTable users={users} />
+          <UserTable users={users} onEdit={openEditForm} />
         )}
 
         {/* Pagination */}
@@ -134,6 +161,13 @@ export default function UsersPage() {
                 Next
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Form Modal */}
+        {isFormOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <UserForm user={selectedUser || undefined} onClose={() => setIsFormOpen(false)} />
           </div>
         )}
       </div>
