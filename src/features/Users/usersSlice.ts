@@ -11,6 +11,7 @@ export interface User {
 }
 
 interface UsersState {
+  [x: string]: any;
   list: User[];
   loading: boolean;
   error: string | null;

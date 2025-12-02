@@ -2,6 +2,7 @@ import { LogOut, CheckSquare, Search, Bell, Settings, Menu, X, Command } from "l
 import { useState } from "react";
 import type { RootState } from "../store/store";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
     
@@ -59,18 +60,22 @@ export default function Navbar() {
 
             {/* Navigation Links - Desktop */}
             <div className="hidden lg:flex items-center gap-1">
-              <a href="#" className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg transition-colors">
-                Dashboard
-              </a>
-              <a href="#" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+              <Link
+                to="/users"
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Users
+              </Link>
+
+              <Link to="/projects" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                 Projects
-              </a>
-              <a href="#" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+              </Link>
+              <Link to="#" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                 Tasks
-              </a>
-              <a href="#" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+              </Link>
+              <Link to="#" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                 Team
-              </a>
+              </Link>
             </div>
           </div>
 

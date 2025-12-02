@@ -3,6 +3,8 @@ import Login from "./features/Auth/Login";
 import Register from "./features/Auth/Register";
 import Logout from "./features/Auth/Logout";
 import Home from "./Pages/Home";
+import UsersPage from "./features/Users/UsersPage";
+import ProjectsPage from "./features/Projects/ProjectsPage";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -10,5 +12,7 @@ export const router = createBrowserRouter([
     { path: "/home", element: <Home /> },
   { path: "/logout", element: <Logout /> },
 
+  {path: "/users", element: <UsersPage />},
+  {path: "/projects", element: <ProjectsPage />},
   { path: "/", element: <Login /> }, // default redirect
 ]);
