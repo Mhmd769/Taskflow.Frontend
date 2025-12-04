@@ -2,13 +2,15 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "../features/Auth/authSlice";
 import usersReducer from "../features/Users/usersSlice"; // import users slice
 import projectreducer from "../features/Projects/ProjectSlice";
+import Taskreducer from "../features/Tasks/TasksSlice";
 import { useDispatch, useSelector, type TypedUseSelectorHook } from "react-redux";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     users: usersReducer, // fixed
-    project : projectreducer
+    project : projectreducer,
+    task : Taskreducer
 
   },
 });
