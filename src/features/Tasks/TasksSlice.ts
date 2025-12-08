@@ -150,6 +150,29 @@ export const deleteTask = createAsyncThunk<string, string>(
   }
 );
 
+
+
+export const changeTaskStatus = createAsyncThunk<
+  Task,
+  { taskId: string; newStatus: number }
+>(
+  "tasks/changeTaskStatus",
+  async ({ taskId, newStatus }, { rejectWithValue }) => {
+    try {
+      const res = await axiosClient.post(
+        `/Tasks/${taskId}/status`,
+        newStatus,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      return res.data;
+    } catch (error: any) {
+      console.error("❌ Change status error:", error);
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 export const tasksSlice = createSlice({
   name: "tasks",
   initialState,
@@ -177,7 +200,11 @@ export const tasksSlice = createSlice({
       })
       .addCase(deleteTask.fulfilled, (state, action: PayloadAction<string>) => {
         state.list = state.list.filter((t) => t.id !== action.payload);
-      });
+      })
+      .addCase(changeTaskStatus.fulfilled, (state, action: PayloadAction<Task>) => {
+  const index = state.list.findIndex(t => t.id === action.payload.id);
+  if (index !== -1) state.list[index] = action.payload;
+  })
   },
 });
 

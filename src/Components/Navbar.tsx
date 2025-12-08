@@ -73,8 +73,8 @@ export default function Navbar() {
               <Link to="/tasks" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                 Tasks
               </Link>
-              <Link to="#" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                Team
+              <Link to="/taskmangement" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                Taskmangement
               </Link>
             </div>
           </div>

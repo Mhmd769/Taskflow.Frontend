@@ -6,6 +6,7 @@ import {
   fetchProjects,
   deleteProject,
   type Project,
+  getProjectById,
 } from "./ProjectSlice";
 
 import ProjectsTable from "./components/ProjectsTable";
@@ -49,6 +50,11 @@ export default function ProjectsPage() {
     }
   };
 
+  const getptojectbyid = (id: string) => {
+    // Dispatch getProjectById action
+    dispatch(getProjectById(id));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -74,6 +80,7 @@ export default function ProjectsPage() {
         <ProjectsTable
           projects={list}
           loading={loading}
+          getbyid={getptojectbyid}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />

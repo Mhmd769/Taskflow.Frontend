@@ -10,13 +10,29 @@ export interface User {
   role: "Admin" | "ProjectManager" | "User";
 }
 
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: number;
+  createdAt: string;
+  dueDate: string;
+  projectId: string;
+  projectName: string;
+  assignedUserIds: string[];
+  assignedUserNames: string[];
+}
+
 export interface Project {
   id: string;
   name: string;
   description?: string;
   createdAt: string;
   owner: User;
+  tasks?: Task[];
+  taskCount?: number;
 }
+
 
 interface ProjectsState {
   list: Project[];
@@ -88,6 +104,16 @@ export const deleteProject = createAsyncThunk<string, string>(
   async (projectId) => {
     await axiosClient.delete(`/Projects/${projectId}`);
     return projectId;
+  }
+);
+
+//get potject by id 
+
+export const getProjectById = createAsyncThunk<Project, string>(
+  "projects/getProjectById",
+  async (projectId) => {
+    const res = await axiosClient.get(`/Projects/${projectId}`);
+    return res.data;
   }
 );
 

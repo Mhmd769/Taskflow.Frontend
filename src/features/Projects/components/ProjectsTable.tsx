@@ -1,12 +1,14 @@
 // ProjectsTable.tsx
-import { Pencil, Trash2, FileText } from "lucide-react";
-import type { Project } from "../ProjectSlice";
+import { Pencil, Trash2, FileText, Eye } from "lucide-react";
+import { type Project } from "../ProjectSlice";
+import { Link } from "react-router-dom";
 
 interface ProjectsTableProps {
   projects: Project[];
   loading: boolean;
   onEdit: (project: Project) => void;
   onDelete: (id: string) => void;
+  getbyid: (id: string) => void;
 }
 
 export default function ProjectsTable({
@@ -14,6 +16,7 @@ export default function ProjectsTable({
   loading,
   onEdit,
   onDelete,
+  getbyid,
 }: ProjectsTableProps) {
   if (loading) {
     return (
@@ -66,7 +69,9 @@ export default function ProjectsTable({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md mr-3">
+                      <Link to={`/projects/${project.id}`} >
                       {project.name.charAt(0).toUpperCase()}
+                      </Link>
                     </div>
                     <div className="text-sm font-semibold text-gray-900">{project.name}</div>
                   </div>
@@ -102,6 +107,16 @@ export default function ProjectsTable({
                       title="Delete project"
                     >
                       <Trash2 className="w-5 h-5" />
+                    </button>
+
+                    <button
+                      onClick={()=> getbyid(project.id)}
+                      className="p-2.5 text-green-600 hover:bg-green-50 rounded-lg transition-all hover:scale-110"
+                      title="View project details"
+                    >
+                      <Link to={`/projects/${project.id}`}>
+                      <Eye className="w-5 h-5 text-green-600 hover:bg-green-50 rounded-lg transition-all hover:scale-110" />
+                      </Link>
                     </button>
                   </div>
                 </td>
