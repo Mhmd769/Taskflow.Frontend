@@ -1,32 +1,44 @@
 import { LogOut, CheckSquare, Search, Bell, Settings, Menu, X, Command } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { RootState } from "../store/store";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import { fetchUnreadNotifications, markAsRead, type Notification } from "../features/Notifications/notificationsSlice";
+import type { AppDispatch } from "../store/store";
 
 export default function Navbar() {
-    
   const user = useSelector((state: RootState) => state.auth.user);
+  const { unread } = useSelector((state: RootState) => state.notifications);
+  const dispatch = useDispatch<AppDispatch>();
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [notifications] = useState(3);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
-  const handleLogout = () => {
-    console.log("Logout clicked");
-  };
+  useEffect(() => {
+    dispatch(fetchUnreadNotifications());
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dispatch]);
+
+  const handleLogout = () => console.log("Logout clicked");
+
+  const getInitials = (name: string) =>
+    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
   const displayName = user?.email || "User";
   const initials = user?.fullName ? getInitials(user.fullName) : "U";
+
+  const handleMarkRead = (id: string) => {
+    dispatch(markAsRead(id));
+  };
 
   return (
     <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
@@ -39,14 +51,10 @@ export default function Navbar() {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              {isMobileMenuOpen ? (
-                <X className="w-5 h-5 text-gray-600" />
-              ) : (
-                <Menu className="w-5 h-5 text-gray-600" />
-              )}
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-gray-600" /> : <Menu className="w-5 h-5 text-gray-600" />}
             </button>
 
-            {/* Logo/Brand */}
+            {/* Logo */}
             <div className="flex items-center gap-2 cursor-pointer group">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                 <CheckSquare className="w-6 h-6 text-white" />
@@ -58,36 +66,22 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Navigation Links - Desktop */}
+            {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-1">
-              <Link
-                to="/users"
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Users
-              </Link>
-
-              <Link to="/projects" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                Projects
-              </Link>
-              <Link to="/tasks" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                Tasks
-              </Link>
+              <Link to="/users" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Users</Link>
+              <Link to="/projects" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Projects</Link>
+              <Link to="/tasks" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Tasks</Link>
               <Link to="/taskmangement" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                 Taskmangement
               </Link>
             </div>
           </div>
 
-          {/* Center Section - Search Bar */}
+          {/* Search Bar */}
           <div className="hidden md:flex flex-1 max-w-2xl mx-8">
             <div className={`relative w-full transition-all duration-300 ${isSearchFocused ? 'scale-105' : ''}`}>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                {isSearchFocused ? (
-                  <Command className="w-4 h-4 text-blue-500" />
-                ) : (
-                  <Search className="w-4 h-4 text-gray-400" />
-                )}
+                {isSearchFocused ? <Command className="w-4 h-4 text-blue-500" /> : <Search className="w-4 h-4 text-gray-400" />}
               </div>
               <input
                 type="text"
@@ -95,35 +89,62 @@ export default function Navbar() {
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 border rounded-xl text-sm transition-all duration-300 focus:outline-none ${
-                  isSearchFocused
-                    ? 'border-blue-500 bg-white shadow-lg ring-4 ring-blue-100'
-                    : 'border-gray-200 hover:bg-gray-100'
+                  isSearchFocused ? 'border-blue-500 bg-white shadow-lg ring-4 ring-blue-100' : 'border-gray-200 hover:bg-gray-100'
                 }`}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded">
-                  ⌘K
-                </kbd>
+                <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded">⌘K</kbd>
               </div>
             </div>
           </div>
 
-          {/* Right Section - Actions & Profile */}
-          <div className="flex items-center gap-2">
-            {/* Mobile Search Button */}
-            <button className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-              <Search className="w-5 h-5" />
-            </button>
-
+          {/* Right Section */}
+          <div className="flex items-center gap-2 relative">
             {/* Notifications */}
-            <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors group">
-              <Bell className="w-5 h-5" />
-              {notifications > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  {notifications}
-                </span>
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Bell className="w-5 h-5" />
+                {unread.length > 0 && (
+                  <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {unread.length}
+                  </span>
+                )}
+              </button>
+
+              {isNotifOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  <div className="p-3 font-semibold border-b border-gray-200">Notifications</div>
+                  <ul className="max-h-64 overflow-y-auto">
+                    {unread.length > 0 ? (
+                      unread.map((n: Notification) => (
+                        <li key={n.id} className="p-3 hover:bg-gray-50 flex justify-between items-start border-b border-gray-100">
+                          <div>
+                            <p className="text-sm text-gray-700">{n.message}</p>
+                            {n.link && (
+                              <Link
+                                to={n.link}
+                                className="text-xs text-blue-600 hover:underline"
+                                onClick={() => handleMarkRead(n.id)}
+                              >
+                                View
+                              </Link>
+                            )}
+                          </div>
+                          <button onClick={() => handleMarkRead(n.id)} className="text-xs text-gray-400 hover:text-gray-600 ml-2">
+                            Mark read
+                          </button>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="p-3 text-gray-500 text-sm">No new notifications</li>
+                    )}
+                  </ul>
+                </div>
               )}
-            </button>
+            </div>
 
             {/* Settings */}
             <button className="hidden sm:block p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
@@ -133,25 +154,21 @@ export default function Navbar() {
             {/* Divider */}
             <div className="hidden sm:block w-px h-8 bg-gray-200 mx-2"></div>
 
-            {/* User Profile Dropdown */}
+            {/* Profile */}
             <div className="flex items-center gap-3 px-3 py-1.5 hover:bg-gray-50 rounded-xl transition-all duration-300 cursor-pointer group">
               <div className="relative">
                 <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
-                  <span className="text-white font-semibold text-sm">
-                    {initials}
-                  </span>
+                  <span className="text-white font-semibold text-sm">{initials}</span>
                 </div>
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
               </div>
               <div className="hidden lg:block">
-                <p className="text-sm font-semibold text-gray-900 leading-tight">
-                  {displayName}
-                </p>
+                <p className="text-sm font-semibold text-gray-900 leading-tight">{displayName}</p>
                 <p className="text-xs text-gray-500">{user?.role}</p>
               </div>
             </div>
 
-            {/* Logout Button */}
+            {/* Logout */}
             <button
               onClick={handleLogout}
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-300 font-medium group"
@@ -168,22 +185,12 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-gray-200 bg-white shadow-lg">
           <div className="px-4 py-3 space-y-1">
-            <a href="#" className="block px-4 py-3 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg">
-              Dashboard
-            </a>
-            <a href="#" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-              Projects
-            </a>
-            <a href="#" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-              Tasks
-            </a>
-            <a href="#" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-              Team
-            </a>
+            <Link to="/dashboard" className="block px-4 py-3 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg">Dashboard</Link>
+            <Link to="/projects" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Projects</Link>
+            <Link to="/tasks" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Tasks</Link>
+            <Link to="/team" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Team</Link>
             <div className="border-t border-gray-200 my-2"></div>
-            <a href="#" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-              Settings
-            </a>
+            <Link to="/settings" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Settings</Link>
             <button
               onClick={handleLogout}
               className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"

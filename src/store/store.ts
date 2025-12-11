@@ -3,6 +3,7 @@ import authReducer from "../features/Auth/authSlice";
 import usersReducer from "../features/Users/usersSlice"; // import users slice
 import projectreducer from "../features/Projects/ProjectSlice";
 import Taskreducer from "../features/Tasks/TasksSlice";
+import notificationsreducer from "../features/Notifications/notificationsSlice";
 import { useDispatch, useSelector, type TypedUseSelectorHook } from "react-redux";
 
 export const store = configureStore({
@@ -10,7 +11,8 @@ export const store = configureStore({
     auth: authReducer,
     users: usersReducer, // fixed
     project : projectreducer,
-    task : Taskreducer
+    task : Taskreducer,
+    notifications: notificationsreducer,
 
   },
 });
@@ -21,3 +23,4 @@ export type AppDispatch = typeof store.dispatch;
 
 export const useAppDispatch = () => useDispatch<AppDispatch>();
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+
