@@ -1,17 +1,20 @@
-import { LogOut, CheckSquare, Search, Bell, Settings, Menu, X, Command, Check, Clock, AlertCircle } from "lucide-react";
+import { 
+  LogOut, CheckSquare, Search, Bell, Settings, Menu, X, Command, Check, Clock, AlertCircle 
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import type { RootState } from "../store/store";
 import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
-import { fetchUnreadNotifications, markNotificationAsRead, type Notification } from "../features/Notifications/notificationsSlice";
+import { 
+  fetchUnreadNotifications, markNotificationAsRead, type Notification 
+} from "../features/Notifications/notificationsSlice";
 import type { AppDispatch } from "../store/store";
+import { startNotificationHub, stopNotificationHub } from "../features/Notifications/notificationHub";
 
 export default function Navbar() {
   const user = useSelector((state: RootState) => state.auth.user);
   const { unread } = useSelector((state: RootState) => state.notifications);
   const dispatch = useDispatch<AppDispatch>();
-
-
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -19,7 +22,16 @@ export default function Navbar() {
   const [prevUnreadCount, setPrevUnreadCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  // ----------------- SignalR: Real-time notifications -----------------
+  useEffect(() => {
+    startNotificationHub((notif: Notification) => {
+      dispatch({ type: "notifications/createNotification/fulfilled", payload: notif });
+    });
 
+    return () => stopNotificationHub();
+  }, [dispatch]);
+
+  // ----------------- Fetch initial unread notifications -----------------
   useEffect(() => {
     dispatch(fetchUnreadNotifications());
 
@@ -32,66 +44,55 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dispatch]);
 
-
+  // ----------------- Notification sound -----------------
   const audioContextRef = useRef<AudioContext | null>(null);
-const audioBufferRef = useRef<AudioBuffer | null>(null);
+  const audioBufferRef = useRef<AudioBuffer | null>(null);
 
-// Load audio buffer once
-useEffect(() => {
-  fetch("/sounds/notif.mp3")
-    .then(res => res.arrayBuffer())
-    .then(arrayBuffer => {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+  useEffect(() => {
+    fetch("/sounds/notif.mp3")
+      .then(res => res.arrayBuffer())
+      .then(arrayBuffer => {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        return audioContextRef.current.decodeAudioData(arrayBuffer);
+      })
+      .then(decodedData => { audioBufferRef.current = decodedData; })
+      .catch(err => console.log("Audio load failed", err));
+  }, []);
+
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+        audioContextRef.current.resume();
       }
-      return audioContextRef.current.decodeAudioData(arrayBuffer);
-    })
-    .then(decodedData => {
-      audioBufferRef.current = decodedData;
-    })
-    .catch(err => console.log("Audio load failed", err));
-}, []);
+    };
+    window.addEventListener("click", unlockAudio);
+    window.addEventListener("keydown", unlockAudio);
+    return () => {
+      window.removeEventListener("click", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+  }, []);
 
-// Unlock audio on first user interaction
-useEffect(() => {
-  const unlockAudio = () => {
-    if (audioContextRef.current && audioContextRef.current.state === "suspended") {
-      audioContextRef.current.resume();
-    }
+  const playNotificationSound = () => {
+    if (!audioContextRef.current || !audioBufferRef.current) return;
+    const source = audioContextRef.current.createBufferSource();
+    source.buffer = audioBufferRef.current;
+    source.connect(audioContextRef.current.destination);
+    source.start(0);
   };
-  window.addEventListener("click", unlockAudio);
-  window.addEventListener("keydown", unlockAudio);
 
-  return () => {
-    window.removeEventListener("click", unlockAudio);
-    window.removeEventListener("keydown", unlockAudio);
-  };
-}, []);
+  useEffect(() => {
+    if (unread.length > prevUnreadCount) playNotificationSound();
+    setPrevUnreadCount(unread.length);
+  }, [unread.length]);
 
-// Play sound function
-const playNotificationSound = () => {
-  if (!audioContextRef.current || !audioBufferRef.current) return;
-  const source = audioContextRef.current.createBufferSource();
-  source.buffer = audioBufferRef.current;
-  source.connect(audioContextRef.current.destination);
-  source.start(0);
-};
-
-// Play sound **only when a new notification arrives**
-useEffect(() => {
-  if (unread.length > prevUnreadCount) {
-    playNotificationSound();
-  }
-  setPrevUnreadCount(unread.length);
-}, [unread.length]);
-
-
-
-
+  // ----------------- Helper functions -----------------
   const handleLogout = () => console.log("Logout clicked");
 
   const getInitials = (name: string) =>
-    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
   const displayName = user?.email || "User";
   const initials = user?.fullName ? getInitials(user.fullName) : "U";
@@ -102,30 +103,21 @@ useEffect(() => {
 
   const getNotificationIcon = (type?: any) => {
     switch (type) {
-      case 'success':
-        return <Check className="w-4 h-4 text-green-500" />;
-      case 'warning':
-        return <AlertCircle className="w-4 h-4 text-orange-500" />;
-      case 'error':
-        return <AlertCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <Bell className="w-4 h-4 text-blue-500" />;
+      case "success": return <Check className="w-4 h-4 text-green-500" />;
+      case "warning": return <AlertCircle className="w-4 h-4 text-orange-500" />;
+      case "error": return <AlertCircle className="w-4 h-4 text-red-500" />;
+      default: return <Bell className="w-4 h-4 text-blue-500" />;
     }
   };
 
-  const getNotificationColorClasses = (type?: any): string => {
+  const getNotificationColorClasses = (type?: any) => {
     switch (type) {
-      case 'success':
-        return 'bg-green-50 border-green-200';
-      case 'warning':
-        return 'bg-orange-50 border-orange-200';
-      case 'error':
-        return 'bg-red-50 border-red-200';
-      default:
-        return 'bg-blue-50 border-blue-200';
+      case "success": return "bg-green-50 border-green-200";
+      case "warning": return "bg-orange-50 border-orange-200";
+      case "error": return "bg-red-50 border-red-200";
+      default: return "bg-blue-50 border-blue-200";
     }
   };
-
   return (
     <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
