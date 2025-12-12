@@ -4,6 +4,8 @@ import axiosClient from "../../api/axiosClient";
 
 // ------------- TYPES -------------
 export interface Notification {
+  timestamp: any;
+  type(type: any): import("react").ReactNode;
   id: string;
   userId: string;
   message: string;
@@ -51,6 +53,16 @@ export const fetchAllNotifications = createAsyncThunk<Notification[]>(
     return res.data;
   }
 );
+
+// PUT: mark notification as read
+export const markNotificationAsRead = createAsyncThunk<
+  string,
+  string
+>("notifications/markAsRead", async (id) => {
+  await axiosClient.put(`/Notifications/mark-as-read/${id}`);
+  return id; // return the id so reducer can update state
+});
+
 
 // ------------- SLICE -------------
 const notificationsSlice = createSlice({
@@ -102,7 +114,15 @@ const notificationsSlice = createSlice({
       .addCase(createNotification.fulfilled, (state, action: PayloadAction<Notification>) => {
         state.unread.unshift(action.payload);
         state.all.unshift(action.payload);
-      });
+      })
+
+      .addCase(markNotificationAsRead.fulfilled, (state, action: PayloadAction<string>) => {
+      const id = action.payload;
+      state.unread = state.unread.filter(n => n.id !== id); // remove from unread
+      const notif = state.all.find(n => n.id === id);
+      if (notif) notif.isRead = true;
+})
+
   },
 });
 

@@ -1,9 +1,9 @@
-import { LogOut, CheckSquare, Search, Bell, Settings, Menu, X, Command } from "lucide-react";
+import { LogOut, CheckSquare, Search, Bell, Settings, Menu, X, Command, Check, Clock, AlertCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import type { RootState } from "../store/store";
 import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
-import { fetchUnreadNotifications, markAsRead, type Notification } from "../features/Notifications/notificationsSlice";
+import { fetchUnreadNotifications, markNotificationAsRead, type Notification } from "../features/Notifications/notificationsSlice";
 import type { AppDispatch } from "../store/store";
 
 export default function Navbar() {
@@ -11,10 +11,14 @@ export default function Navbar() {
   const { unread } = useSelector((state: RootState) => state.notifications);
   const dispatch = useDispatch<AppDispatch>();
 
+
+
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [prevUnreadCount, setPrevUnreadCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     dispatch(fetchUnreadNotifications());
@@ -28,6 +32,62 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dispatch]);
 
+
+  const audioContextRef = useRef<AudioContext | null>(null);
+const audioBufferRef = useRef<AudioBuffer | null>(null);
+
+// Load audio buffer once
+useEffect(() => {
+  fetch("/sounds/notif.mp3")
+    .then(res => res.arrayBuffer())
+    .then(arrayBuffer => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      return audioContextRef.current.decodeAudioData(arrayBuffer);
+    })
+    .then(decodedData => {
+      audioBufferRef.current = decodedData;
+    })
+    .catch(err => console.log("Audio load failed", err));
+}, []);
+
+// Unlock audio on first user interaction
+useEffect(() => {
+  const unlockAudio = () => {
+    if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+      audioContextRef.current.resume();
+    }
+  };
+  window.addEventListener("click", unlockAudio);
+  window.addEventListener("keydown", unlockAudio);
+
+  return () => {
+    window.removeEventListener("click", unlockAudio);
+    window.removeEventListener("keydown", unlockAudio);
+  };
+}, []);
+
+// Play sound function
+const playNotificationSound = () => {
+  if (!audioContextRef.current || !audioBufferRef.current) return;
+  const source = audioContextRef.current.createBufferSource();
+  source.buffer = audioBufferRef.current;
+  source.connect(audioContextRef.current.destination);
+  source.start(0);
+};
+
+// Play sound **only when a new notification arrives**
+useEffect(() => {
+  if (unread.length > prevUnreadCount) {
+    playNotificationSound();
+  }
+  setPrevUnreadCount(unread.length);
+}, [unread.length]);
+
+
+
+
   const handleLogout = () => console.log("Logout clicked");
 
   const getInitials = (name: string) =>
@@ -37,7 +97,33 @@ export default function Navbar() {
   const initials = user?.fullName ? getInitials(user.fullName) : "U";
 
   const handleMarkRead = (id: string) => {
-    dispatch(markAsRead(id));
+    dispatch(markNotificationAsRead(id));
+  };
+
+  const getNotificationIcon = (type?: any) => {
+    switch (type) {
+      case 'success':
+        return <Check className="w-4 h-4 text-green-500" />;
+      case 'warning':
+        return <AlertCircle className="w-4 h-4 text-orange-500" />;
+      case 'error':
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return <Bell className="w-4 h-4 text-blue-500" />;
+    }
+  };
+
+  const getNotificationColorClasses = (type?: any): string => {
+    switch (type) {
+      case 'success':
+        return 'bg-green-50 border-green-200';
+      case 'warning':
+        return 'bg-orange-50 border-orange-200';
+      case 'error':
+        return 'bg-red-50 border-red-200';
+      default:
+        return 'bg-blue-50 border-blue-200';
+    }
   };
 
   return (
@@ -101,47 +187,111 @@ export default function Navbar() {
           {/* Right Section */}
           <div className="flex items-center gap-2 relative">
             {/* Notifications */}
-            <div className="relative" ref={notifRef}>
+          {/* Notifications */}
+              <div className="relative" ref={notifRef}>
               <button
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                onClick={() => setIsNotifOpen(!isNotifOpen)} // just toggle menu
+                className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-300 hover:scale-105"
               >
-                <Bell className="w-5 h-5" />
+                <Bell className={`w-5 h-5 transition-all duration-300 ${unread.length > 0 ? 'animate-pulse text-blue-600' : ''}`} />
                 {unread.length > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {unread.length}
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                    {unread.length > 9 ? '9+' : unread.length}
                   </span>
                 )}
               </button>
 
+
+
               {isNotifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                  <div className="p-3 font-semibold border-b border-gray-200">Notifications</div>
-                  <ul className="max-h-64 overflow-y-auto">
+                <div className="absolute right-0 mt-2 w-96 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                  {/* Header */}
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bell className="w-5 h-5 text-blue-600" />
+                        <h3 className="font-bold text-gray-900">Notifications</h3>
+                        {unread.length > 0 && (
+                          <span className="px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded-full">
+                            {unread.length} new
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notifications List */}
+                  <div className="max-h-96 overflow-y-auto">
                     {unread.length > 0 ? (
-                      unread.map((n: Notification) => (
-                        <li key={n.id} className="p-3 hover:bg-gray-50 flex justify-between items-start border-b border-gray-100">
-                          <div>
-                            <p className="text-sm text-gray-700">{n.message}</p>
-                            {n.link && (
-                              <Link
-                                to={n.link}
-                                className="text-xs text-blue-600 hover:underline"
-                                onClick={() => handleMarkRead(n.id)}
-                              >
-                                View
-                              </Link>
-                            )}
+                      <div className="divide-y divide-gray-100">
+                        {unread.map((n: Notification) => (
+                          <div
+                            key={n.id}
+                            className={`p-4 hover:bg-gray-50 transition-all duration-300 border-l-4 ${getNotificationColorClasses(n.type)}`}
+                          >
+                            <div className="flex gap-3">
+                              {/* Icon */}
+                              <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${getNotificationColorClasses(n.type)}`}>
+                                {getNotificationIcon(n.type)}
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-gray-800 font-medium leading-relaxed mb-1">
+                                  {n.message}
+                                </p>
+                                
+                                {/* Timestamp */}
+                                {n.timestamp && (
+                                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+                                    <Clock className="w-3 h-3" />
+                                    <span>{n.timestamp}</span>
+                                  </div>
+                                )}
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-2 mt-2">
+                                  {n.link && (
+                                    <Link
+                                      to={n.link}
+                                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                      onClick={() => handleMarkRead(n.id)}
+                                    >
+                                      View Details
+                                    </Link>
+                                  )}
+                                  <button
+                                    onClick={() => handleMarkRead(n.id)}
+                                    className="inline-flex items-center gap-1 px-3 py-1 text-gray-600 text-xs font-medium hover:bg-gray-100 rounded-lg transition-colors"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                    Mark as Read
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <button onClick={() => handleMarkRead(n.id)} className="text-xs text-gray-400 hover:text-gray-600 ml-2">
-                            Mark read
-                          </button>
-                        </li>
-                      ))
+                        ))}
+                      </div>
                     ) : (
-                      <li className="p-3 text-gray-500 text-sm">No new notifications</li>
+                      <div className="p-8 text-center">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Bell className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 font-medium">No new notifications</p>
+                        <p className="text-gray-400 text-sm mt-1">You're all caught up!</p>
+                      </div>
                     )}
-                  </ul>
+                  </div>
+
+                  {/* Footer */}
+                  {unread.length > 0 && (
+                    <div className="p-3 bg-gray-50 border-t border-gray-200">
+                      <button className="w-full py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                        Mark all as read
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -203,3 +353,5 @@ export default function Navbar() {
     </nav>
   );
 }
+
+
