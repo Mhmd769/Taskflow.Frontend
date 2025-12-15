@@ -9,6 +9,7 @@ import TasksPage from "./features/Tasks/TasksPage";
 import ProjectDetails from "./features/Projects/ProjectDetailsModal";
 import TaskManagement from "./features/Tasks/TaskManagement";
 import MainLayout from "./MainLayout";
+import AdminDashboard from "./features/Admin/AdminDashboard";
 
 export const router = createBrowserRouter([
   // ❌ Pages WITHOUT navbar
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
   {
     element: <MainLayout />,   // 👈 The layout with the navbar
     children: [
+      { path: "/admin", element: <AdminDashboard /> },
       { path: "/home", element: <Home /> },
       { path: "/users", element: <UsersPage /> },
       { path: "/projects", element: <ProjectsPage /> },

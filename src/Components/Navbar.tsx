@@ -1,20 +1,21 @@
-import { 
-  LogOut, CheckSquare, Search, Bell, Settings, Menu, X, Command, Check, Clock, AlertCircle 
-} from "lucide-react";
+import { CheckSquare, Search, Bell, Settings, Menu, X, Command, Check, Clock, AlertCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import type { RootState } from "../store/store";
 import { useSelector, useDispatch } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   fetchUnreadNotifications, markNotificationAsRead, type Notification 
 } from "../features/Notifications/notificationsSlice";
 import type { AppDispatch } from "../store/store";
 import { startNotificationHub, stopNotificationHub } from "../features/Notifications/notificationHub";
+import { logout } from "../features/Auth/authSlice";
 
 export default function Navbar() {
   const user = useSelector((state: RootState) => state.auth.user);
+  const token = useSelector((state: RootState) => state.auth.token);
   const { unread } = useSelector((state: RootState) => state.notifications);
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,15 +25,17 @@ export default function Navbar() {
 
   // ----------------- SignalR: Real-time notifications -----------------
   useEffect(() => {
+    if (!token) return;
     startNotificationHub((notif: Notification) => {
       dispatch({ type: "notifications/createNotification/fulfilled", payload: notif });
     });
 
     return () => stopNotificationHub();
-  }, [dispatch]);
+  }, [dispatch, token]);
 
   // ----------------- Fetch initial unread notifications -----------------
   useEffect(() => {
+    if (!token) return;
     dispatch(fetchUnreadNotifications());
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -42,7 +45,7 @@ export default function Navbar() {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [dispatch]);
+  }, [dispatch, token]);
 
   // ----------------- Notification sound -----------------
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -89,7 +92,11 @@ export default function Navbar() {
   }, [unread.length]);
 
   // ----------------- Helper functions -----------------
-  const handleLogout = () => console.log("Logout clicked");
+  const handleLogout = () => {
+    stopNotificationHub();
+    dispatch(logout());
+    navigate("/login");
+  };
 
   const getInitials = (name: string) =>
     name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -146,6 +153,11 @@ export default function Navbar() {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-1">
+              {(user?.role === "Admin" || user?.role === "SuperAdmin") && (
+                <Link to="/admin" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                  Admin
+                </Link>
+              )}
               <Link to="/users" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Users</Link>
               <Link to="/projects" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Projects</Link>
               <Link to="/tasks" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Tasks</Link>
@@ -316,7 +328,6 @@ export default function Navbar() {
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-300 font-medium group"
               title="Logout"
             >
-              <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
               <span className="hidden xl:inline text-sm">Logout</span>
             </button>
           </div>
@@ -327,7 +338,9 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-gray-200 bg-white shadow-lg">
           <div className="px-4 py-3 space-y-1">
-            <Link to="/dashboard" className="block px-4 py-3 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg">Dashboard</Link>
+            {(user?.role === "Admin" || user?.role === "SuperAdmin") && (
+              <Link to="/admin" className="block px-4 py-3 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg">Admin</Link>
+            )}
             <Link to="/projects" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Projects</Link>
             <Link to="/tasks" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Tasks</Link>
             <Link to="/team" className="block px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Team</Link>

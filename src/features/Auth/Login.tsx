@@ -49,6 +49,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           <input
             type="password"
             placeholder="Password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full border border-gray-300 p-2 rounded"
