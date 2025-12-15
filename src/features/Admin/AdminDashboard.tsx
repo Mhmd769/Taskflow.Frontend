@@ -229,35 +229,9 @@ export default function AdminDashboard() {
               <div className="lg:col-span-2 rounded-2xl bg-white shadow-sm border border-gray-100 p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Tasks Over Time</h2>
-                  <span className="text-sm text-gray-500">Created vs Completed</span>
+                  <span className="text-sm text-gray-500">Calendar View</span>
                 </div>
-                <div className="space-y-3">
-                  {timeline.map((item) => (
-                    <div key={item.date} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm text-gray-700">
-                        <span>{formatDate(item.date)}</span>
-                        <span className="text-xs text-gray-500">
-                          Created: {item.created} • Completed: {item.completed}
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-gray-100 overflow-hidden flex">
-                        <div
-                          className="h-full bg-blue-500"
-                          style={{ width: `${Math.min(item.created * 8, 100)}%` }}
-                          title="Created"
-                        />
-                        <div
-                          className="h-full bg-emerald-500"
-                          style={{ width: `${Math.min(item.completed * 8, 100)}%` }}
-                          title="Completed"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  {timeline.length === 0 && (
-                    <p className="text-sm text-gray-500">No data in the selected range.</p>
-                  )}
-                </div>
+                <CalendarView timeline={timeline} />
               </div>
 
               <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-6 space-y-4">
@@ -353,3 +327,120 @@ function ListChartCard({
   );
 }
 
+function CalendarView({ timeline }: { timeline: TasksOverTimeDto[] }) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  
+  const timelineMap = useMemo(() => {
+    const map = new Map<string, { created: number; completed: number }>();
+    timeline.forEach((item) => {
+      if (item.date) {
+        const dateKey = new Date(item.date).toDateString();
+        map.set(dateKey, { created: item.created, completed: item.completed });
+      }
+    });
+    return map;
+  }, [timeline]);
+
+  const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const startingDayOfWeek = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+
+  const previousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const monthYear = currentDate.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  const days = [];
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    days.push(<div key={`empty-${i}`} className="aspect-square" />);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dateKey = date.toDateString();
+    const data = timelineMap.get(dateKey);
+    const isToday = dateKey === new Date().toDateString();
+
+    days.push(
+      <div
+        key={day}
+        className={`aspect-square border border-gray-100 rounded-lg p-2 flex flex-col ${
+          isToday ? "bg-blue-50 border-blue-200" : "bg-white"
+        }`}
+      >
+        <div className={`text-xs font-semibold mb-1 ${isToday ? "text-blue-600" : "text-gray-700"}`}>
+          {day}
+        </div>
+        {data && (data.created > 0 || data.completed > 0) && (
+          <div className="flex-1 flex flex-col gap-1 text-[10px]">
+            {data.created > 0 && (
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span className="text-gray-600">{data.created}</span>
+              </div>
+            )}
+            {data.completed > 0 && (
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-gray-600">{data.completed}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={previousMonth}
+          className="p-2 rounded-lg hover:bg-gray-100 transition"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h3 className="text-base font-semibold text-gray-900">{monthYear}</h3>
+        <button
+          onClick={nextMonth}
+          className="p-2 rounded-lg hover:bg-gray-100 transition"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-7 gap-1 text-xs font-semibold text-gray-500 mb-2">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div key={day} className="text-center py-2">
+            {day}
+          </div>
+        ))}
+      </div>
+      
+      <div className="grid grid-cols-7 gap-1">
+        {days}
+      </div>
+      
+      <div className="flex items-center justify-center gap-4 pt-2 text-xs text-gray-600">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          <span>Created</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span>Completed</span>
+        </div>
+      </div>
+    </div>
+  );
+}
