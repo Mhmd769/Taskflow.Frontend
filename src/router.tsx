@@ -10,6 +10,7 @@ import ProjectDetails from "./features/Projects/ProjectDetailsModal";
 import TaskManagement from "./features/Tasks/TaskManagement";
 import MainLayout from "./MainLayout";
 import AdminDashboard from "./features/Admin/AdminDashboard";
+import ChatPage from "./Chat/ChatPage";
 
 export const router = createBrowserRouter([
   // ❌ Pages WITHOUT navbar
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: "/tasks", element: <TasksPage /> },
       { path: "/projects/:id", element: <ProjectDetails /> },
       { path: "/taskmangement", element: <TaskManagement /> },
+      { path:"/chat/:otherUserId" , element: <ChatPage /> },
       { path: "/logout", element: <Logout /> },
     ],
   },

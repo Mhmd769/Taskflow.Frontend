@@ -4,6 +4,7 @@ import usersReducer from "../features/Users/usersSlice"; // import users slice
 import projectreducer from "../features/Projects/ProjectSlice";
 import Taskreducer from "../features/Tasks/TasksSlice";
 import notificationsreducer from "../features/Notifications/notificationsSlice";
+import chatreducer from "../Chat/chatSlice";
 import { useDispatch, useSelector, type TypedUseSelectorHook } from "react-redux";
 
 export const store = configureStore({
@@ -13,6 +14,7 @@ export const store = configureStore({
     project : projectreducer,
     task : Taskreducer,
     notifications: notificationsreducer,
+    chat:chatreducer,
 
   },
 });

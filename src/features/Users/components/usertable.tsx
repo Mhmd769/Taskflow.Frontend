@@ -4,8 +4,7 @@ import { useAppDispatch } from "../../../store/store";
 import { Trash2, Edit, Mail, Shield, User } from "lucide-react";
 import { useState } from "react";
 import { confirmDelete, successAlert, errorAlert } from "../../../utils/alerts";
-
-
+import { Link } from "react-router-dom";
 
 interface UserTableProps {
   users: any[];
@@ -17,15 +16,13 @@ export default function UserTable({ users, onEdit }: UserTableProps) {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
   const handleDelete = async (id: string, name: string) => {
-      const result = await confirmDelete();
-
-      if (result.isConfirmed) {
-        const res = await dispatch(deleteUser(id));
-        if(deleteUser.fulfilled.match(res)) {
-          successAlert(`User "${name}" has been deleted.`);
-        }
-        else {
-          errorAlert(`Failed to delete user "${name}". Please try again.`);
+    const result = await confirmDelete();
+    if (result.isConfirmed) {
+      const res = await dispatch(deleteUser(id));
+      if (deleteUser.fulfilled.match(res)) {
+        successAlert(`User "${name}" has been deleted.`);
+      } else {
+        errorAlert(`Failed to delete user "${name}". Please try again.`);
       }
     }
   };
@@ -116,9 +113,12 @@ export default function UserTable({ users, onEdit }: UserTableProps) {
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">
+                      <Link
+                        to={`/chat/${user.id}`} // navigate to chat page
+                        className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                      >
                         {user.fullName}
-                      </p>
+                      </Link>
                       <p className="text-xs text-gray-500">Member</p>
                     </div>
                   </div>
