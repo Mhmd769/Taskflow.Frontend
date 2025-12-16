@@ -4,6 +4,7 @@ import axiosClient from "../api/axiosClient";
 export interface MessageDto {
   id: string;
   senderId: string;
+  senderFullName: string;
   receiverId: string;
   content: string;
   createdAt: string;

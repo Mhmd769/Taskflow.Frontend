@@ -1,7 +1,7 @@
 // UserTable.tsx
 import { deleteUser } from "../usersSlice";
 import { useAppDispatch } from "../../../store/store";
-import { Trash2, Edit, Mail, Shield, User } from "lucide-react";
+import { Trash2, Edit, Mail, Shield, User, ChartAreaIcon, ChartArea, MessageCircle, TypeIcon, Send } from "lucide-react";
 import { useState } from "react";
 import { confirmDelete, successAlert, errorAlert } from "../../../utils/alerts";
 import { Link } from "react-router-dom";
@@ -154,6 +154,15 @@ export default function UserTable({ users, onEdit }: UserTableProps) {
                       title="Delete user"
                     >
                       <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    </button>
+
+                    <button>
+                    <Link
+                        to={`/chat/${user.id}`} // navigate to chat page
+                        className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                      >
+                        <Send size={20}></Send>
+                      </Link>
                     </button>
                   </div>
                 </td>
